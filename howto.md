@@ -1,4 +1,4 @@
-# How to Build "Reddit Rebellion": A Step-by-Step Guide
+# How to Build "ReddRevolt": A Step-by-Step Guide
 
 This document is our master plan for the Reddit x Kiro Community Games Challenge. We will follow these steps to build, polish, and ship a winning submission.
 
@@ -7,13 +7,13 @@ This document is our master plan for the Reddit x Kiro Community Games Challenge
 ### Step 1: Initialize Your Local Environment
 1.  **Navigate to the project directory:**
     ```bash
-    cd /home/sophiemabel69/reddit-rebellion
+    cd /home/sophiemabel69/ReddRevolt
     ```
 2.  **Initialize Git:**
     ```bash
     git init
     ```
-3.  **Connect to GitHub:** Once you create the `reddit-rebellion` repository on GitHub, connect it to your local repository.
+3.  **Connect to GitHub:** Once you create the `ReddRevolt` repository on GitHub, connect it to your local repository.
     ```bash
     git remote add origin <your-github-repo-url>
     ```
@@ -27,7 +27,7 @@ We will use the Devvit CLI to create a new project from a template. This gives u
     ```
 2.  **Follow the prompts:**
     *   Choose a template. **React** or **Next.js** is recommended.
-    *   Name your project `reddit-rebellion`.
+    *   Name your project `ReddRevolt`.
     *   This will create a new directory inside our project folder. We will move the contents into our main project directory.
 
 ### Step 3: Set up Kiro
@@ -105,3 +105,73 @@ We need to prepare all the required materials for our Devpost submission.
 
 ---
 This is our roadmap. We will follow it closely to ensure we deliver a high-quality, competitive project.
+
+---
+
+## Upgrade Plan: The Social Experiment
+
+The goal is to transform passive participation into active, rewarding engagement through karma-based ranks, community-driven polls, and challenging quests.
+
+### Phase 1: Data Model Expansion (`/.kiro/specs.yaml`)
+
+First, we'll expand your Kiro data models to support the new features. This is the foundation for everything else.
+
+*   **`Rank` Model:** To create a clear progression path for players.
+    *   `name`: (e.g., "Recruit", "Rebel", "Warlord")
+    *   `minKarma`: The karma threshold to achieve the rank.
+    *   `iconUrl`: A URL to a custom icon for each rank.
+
+*   **`Poll` Model:** To give the community a voice and drive engagement.
+    *   `question`: The text of the poll.
+    *   `options`: A list of answer choices.
+    *   `votes`: A map to track which players voted for which option.
+    *   `endsAt`: A timestamp for when the poll automatically closes.
+
+*   **`Quest` Model:** To guide players and reward specific actions.
+    *   `name`: (e.g., "First Strike", "Community Voice", "Top 10 Raider")
+    *   `description`: What the player needs to do to complete it.
+    *   `reward`: The prize for completion (e.g., bonus Energy, a special badge).
+    *   `trigger`: The game event that signals completion (e.g., `action:raid`, `poll:vote`).
+
+*   **Update `Player` Model:**
+    *   Add a `rank` field to store the player's current rank name.
+    *   Add a `completedQuests` list to track their achievements.
+
+### Phase 2: Backend Logic (`src/server/`)
+
+Next, we'll build the server-side functions to power these new features.
+
+*   **`rankManager.js`:**
+    *   A function that automatically calculates and updates a player's rank based on their karma. This will be triggered by a Kiro hook.
+
+*   **`pollManager.js`:**
+    *   Functions to handle poll creation, voting, and tallying the results. These will be called from your frontend.
+
+*   **`questEngine.js`:**
+    *   A set of functions that listen for game events and check if a player has met the criteria for any active quests.
+
+### Phase 3: Frontend UI/UX (`src/client/`)
+
+Now, we'll create the visual components for players to interact with.
+
+*   **`RankDisplay.js` Component:**
+    *   A UI element to proudly display a player's rank and icon next to their username.
+
+*   **`Polls.js` Component:**
+    *   A dedicated section in the UI for viewing and voting on active polls, and seeing the results of past polls.
+
+*   **`Quests.js` Component:**
+    *   A UI to show players a list of available quests, their progress, and the rewards they can earn.
+
+### Phase 4: Kiro Automation (`/.kiro/`)
+
+Finally, we'll use Kiro to automate the new game loops and create a seamless, real-time experience.
+
+*   **`hooks/onKarmaChange.js`:**
+    *   A Kiro hook that triggers whenever a player's karma changes. It will call your `rankManager.js` function to check for a rank-up.
+
+*   **`steering/pollLifecycle.yaml`:**
+    *   A Kiro steering rule that runs on a schedule (e.g., daily) to automatically close finished polls and trigger the backend logic to process the results.
+
+*   **`hooks/onGameEvent.js`:**
+    *   A versatile Kiro hook that listens for various in-game actions (like `raid`, `defend`, `vote`). It will feed these events to your `questEngine.js` to check for quest completions in real-time.

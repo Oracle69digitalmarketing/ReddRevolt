@@ -1,0 +1,10 @@
+name: Daily Round Resolution
+on:
+  schedule:
+    # Runs every day at midnight
+    cron: "0 0 * * *"
+steps:
+  - name: Resolve Daily Round
+    uses: kiro/serverless-function@v1
+    with:
+      functionPath: "src/server/actions/resolveRound.js"

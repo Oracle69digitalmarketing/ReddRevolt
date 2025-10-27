@@ -1,8 +1,8 @@
-# Reddit Rebellion
+# ReddRevolt
 
 > Your Karma is Power. Lead your faction to victory in a battle for control of Reddit.
 
-**Reddit Rebellion** is an interactive multiplayer strategy game built for the **Reddit x Kiro Community Games Challenge**. It transforms passive browsing into an active, strategic battle for dominance, where every upvote is a weapon.
+**ReddRevolt** is an interactive multiplayer strategy game built for the **Reddit x Kiro Community Games Challenge**. It transforms passive browsing into an active, strategic battle for dominance, where every upvote is a weapon.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -39,8 +39,8 @@
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/<your-username>/reddit-rebellion.git
-    cd reddit-rebellion
+    git clone https://github.com/<your-username>/ReddRevolt.git
+    cd ReddRevolt
     ```
 2.  **Install dependencies:**
     ```bash

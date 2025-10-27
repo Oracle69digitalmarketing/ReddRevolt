@@ -1,0 +1,16 @@
+name: Poll Lifecycle Management
+on:
+  schedule:
+    # Runs every hour
+    cron: "0 * * * *"
+steps:
+  - name: Close Ended Polls
+    uses: kiro/serverless-function@v1
+    with:
+      # This function will be executed every hour to check for and close ended polls.
+      # We will need to create the `closePolls.js` file in the `src/server` directory.
+      functionPath: "src/server/closePolls.js"
+      # You can pass additional data to the function if needed.
+      # For example, you could pass a secret API key.
+      # secrets:
+      #   MY_API_KEY: ${{ secrets.MY_API_KEY }}

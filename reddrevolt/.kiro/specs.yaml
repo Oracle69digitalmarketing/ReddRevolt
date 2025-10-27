@@ -1,0 +1,47 @@
+models:
+  Player:
+    attributes:
+      name: string
+      faction: string
+      energy: int
+      rank: string
+      completedQuests:
+        type: list
+        items: string
+
+  Faction:
+    attributes:
+      name: string
+      score: int
+
+  GameRound:
+    attributes:
+      roundNumber: int
+      startTime: string
+      endTime: string
+
+  Rank:
+    attributes:
+      name: string
+      minKarma: int
+      iconUrl: string
+
+  Poll:
+    attributes:
+      question: string
+      options:
+        type: list
+        items: string
+      votes:
+        type: map
+        values:
+          type: list
+          items: string
+      endsAt: string
+
+  Quest:
+    attributes:
+      name: string
+      description: string
+      reward: string
+      trigger: string
