@@ -100,3 +100,47 @@ button {
 button:hover {
   background-color: #555;
 }
+
+/* Faction Themes */
+.faction-Red {
+  --primary-color: #ff4b4b;
+  --secondary-color: #a00000;
+  --text-color: #ffffff;
+}
+
+.faction-Blue {
+  --primary-color: #4b4bff;
+  --secondary-color: #0000a0;
+  --text-color: #ffffff;
+}
+
+.faction-Green {
+  --primary-color: #4bff4b;
+  --secondary-color: #00a000;
+  --text-color: #000000;
+}
+
+.faction-Red .ui-header h1,
+.faction-Blue .ui-header h1,
+.faction-Green .ui-header h1 {
+  color: var(--primary-color);
+}
+
+.faction-Red .ui-sidebar,
+.faction-Blue .ui-sidebar,
+.faction-Green .ui-sidebar {
+  border-right: 1px solid var(--primary-color);
+}
+
+.faction-Red button,
+.faction-Blue button,
+.faction-Green button {
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.faction-Red button:hover,
+.faction-Blue button:hover,
+.faction-Green button:hover {
+  background-color: var(--primary-color);
+}

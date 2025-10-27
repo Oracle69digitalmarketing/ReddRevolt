@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { RankDisplay } from './components/RankDisplay';
 import { Polls } from './components/Polls';
 import { ActivityFeed } from './components/ActivityFeed';
+import { Achievements } from './components/Achievements';
+import { getAllAchievements } from '../server/achievementManager';
 
 const UI = () => {
   const [rank, setRank] = useState({ name: 'Recruit', iconUrl: 'https://www.redditstatic.com/gold/awards/icon/gold_64.png' });
@@ -10,17 +12,21 @@ const UI = () => {
   const [poll, setPoll] = useState(null);
   const [quests, setQuests] = useState([]);
   const [completedQuests, setCompletedQuests] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [completedAchievements, setCompletedAchievements] = useState([]);
 
   const [faction, setFaction] = useState(null);
 
   const [energy, setEnergy] = useState(100); // Initial energy
 
   useEffect(() => {
-    async function fetchQuests() {
+    async function fetchData() {
         const allQuests = await getAllQuests();
         setQuests(allQuests);
+        const allAchievements = await getAllAchievements();
+        setAchievements(allAchievements);
     }
-    fetchQuests();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -44,11 +50,16 @@ const UI = () => {
         setEnergy(event.detail.energy);
     };
 
+    const handleAchievementCompleted = (event: CustomEvent) => {
+        setCompletedAchievements(prevCompletedAchievements => [...prevCompletedAchievements, event.detail.achievement.id]);
+    };
+
     window.addEventListener('count-changed', handleCountChanged);
     window.addEventListener('rank-changed', handleRankChanged);
     window.addEventListener('new-poll', handleNewPoll);
     window.addEventListener('quest-completed', handleQuestCompleted);
     window.addEventListener('energy-changed', handleEnergyChanged);
+    window.addEventListener('achievement-completed', handleAchievementCompleted);
 
     return () => {
       window.removeEventListener('count-changed', handleCountChanged);
@@ -56,6 +67,7 @@ const UI = () => {
       window.removeEventListener('new-poll', handleNewPoll);
       window.removeEventListener('quest-completed', handleQuestCompleted);
       window.removeEventListener('energy-changed', handleEnergyChanged);
+      window.removeEventListener('achievement-completed', handleAchievementCompleted);
     };
   }, []);
 
@@ -96,7 +108,7 @@ const UI = () => {
   }
 
   return (
-    <div className="ui-overlay">
+    <div className={`ui-overlay ${faction ? `faction-${faction}` : ''}`}>
         <div className="ui-header">
             <h1>ReddRevolt</h1>
             <p>Faction: {faction}</p>
@@ -120,6 +132,8 @@ const UI = () => {
                 <Polls poll={poll} />
                 <hr />
                 <Quests quests={quests} completedQuests={completedQuests} />
+                <hr />
+                <Achievements achievements={achievements} completedAchievements={completedAchievements} />
             </div>
         </div>
     </div>

@@ -8,6 +8,9 @@ models:
       completedQuests:
         type: list
         items: string
+      completedAchievements:
+        type: list
+        items: string
 
   Faction:
     attributes:
@@ -45,3 +48,11 @@ models:
       description: string
       reward: string
       trigger: string
+
+  Achievement:
+    attributes:
+      id: string
+      name: string
+      description: string
+      trigger: string
+      reward: string

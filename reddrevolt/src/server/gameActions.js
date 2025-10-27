@@ -1,4 +1,4 @@
-import { redis } from '@devvit/web/server';
+import { redis, Devvit } from '@devvit/web/server';
 
 import { addActivityFeedEvent } from './activityFeed.js';
 
@@ -22,7 +22,7 @@ export async function initialize() {
             ['Blue', { name: 'Blue', score: 0 }],
             ['Green', { name: 'Green', score: 0 }],
         ]);
-        await redis.set('factions', JSON.stringify(Array.from(initialFactions.entries())));
+        await redis.set('factions', JSON.stringify(Array.from(factions.entries())));
     }
 }
 
@@ -46,6 +46,7 @@ export async function joinFaction(playerId, factionName) {
     player.faction = factionName;
     await redis.set('players', JSON.stringify(Array.from(players.entries())));
     addActivityFeedEvent(`${player.name} has joined the ${factionName} faction!`);
+
     return { success: true };
 }
 
