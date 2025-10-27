@@ -5,6 +5,7 @@
 import { checkQuests } from '../../src/server/questEngine.js';
 import { vote } from '../../src/server/pollManager.js';
 import { checkAchievements } from '../../src/server/achievementManager.js';
+import { addCompletedAchievement } from '../../src/server/gameActions.js';
 
 export default async function onGameEvent(event) {
   const { trigger, player, data } = event.data;
@@ -31,8 +32,7 @@ export default async function onGameEvent(event) {
 
   if (newlyCompletedAchievements.length > 0) {
     for (const achievement of newlyCompletedAchievements) {
-      // Here you would update the player's completed achievements in your data store.
-      // For now, we'll dispatch a custom event to the frontend.
+      await addCompletedAchievement(player.id, achievement.id);
       console.log(`Player ${player.name} completed achievement: ${achievement.name}`);
       // Dispatch a custom event to the frontend to update the UI
       // This assumes a mechanism to dispatch custom events from Kiro hooks to the frontend.

@@ -116,3 +116,48 @@ export async function getFactionScores() {
     const factions = new Map(JSON.parse(await redis.get('factions')));
     return Array.from(factions.values());
 }
+
+/**
+ * Updates a player's rank.
+ *
+ * @param {string} playerId The ID of the player.
+ * @param {string} newRank The new rank for the player.
+ */
+export async function updatePlayerRank(playerId, newRank) {
+    const players = new Map(JSON.parse(await redis.get('players')));
+    const player = players.get(playerId);
+    if (player) {
+        player.rank = newRank;
+        await redis.set('players', JSON.stringify(Array.from(players.entries())));
+    }
+}
+
+/**
+ * Adds a completed quest to a player's record.
+ *
+ * @param {string} playerId The ID of the player.
+ * @param {string} questId The ID of the completed quest.
+ */
+export async function addCompletedQuest(playerId, questId) {
+    const players = new Map(JSON.parse(await redis.get('players')));
+    const player = players.get(playerId);
+    if (player && !player.completedQuests.includes(questId)) {
+        player.completedQuests.push(questId);
+        await redis.set('players', JSON.stringify(Array.from(players.entries())));
+    }
+}
+
+/**
+ * Adds a completed achievement to a player's record.
+ *
+ * @param {string} playerId The ID of the player.
+ * @param {string} achievementId The ID of the completed achievement.
+ */
+export async function addCompletedAchievement(playerId, achievementId) {
+    const players = new Map(JSON.parse(await redis.get('players')));
+    const player = players.get(playerId);
+    if (player && !player.completedAchievements.includes(achievementId)) {
+        player.completedAchievements.push(achievementId);
+        await redis.set('players', JSON.stringify(Array.from(players.entries())));
+    }
+}

@@ -4,6 +4,7 @@
 
 import { Devvit } from '@devvit/public-api';
 import { checkAchievements } from '../src/server/achievementManager.js';
+import { addCompletedAchievement } from '../src/server/gameActions.js';
 
 export default async function onPlayerJoin(event) {
   const { playerId, faction, player } = event.data; // Assuming player object is available in event.data
@@ -15,8 +16,7 @@ export default async function onPlayerJoin(event) {
 
   if (newlyCompletedAchievements.length > 0) {
     for (const achievement of newlyCompletedAchievements) {
-      // Here you would update the player's completed achievements in your data store.
-      // For now, we'll dispatch a custom event to the frontend.
+      await addCompletedAchievement(player.id, achievement.id);
       console.log(`Player ${player.name} completed achievement: ${achievement.name}`);
       // Dispatch a custom event to the frontend to update the UI
       // This assumes a mechanism to dispatch custom events from Kiro hooks to the frontend.
