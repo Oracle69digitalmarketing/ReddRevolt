@@ -2,6 +2,9 @@ import express from 'express';
 import { InitResponse, IncrementResponse, DecrementResponse } from '../shared/types/api';
 import { initialize, performRaid, performDefend, performInfluence, joinFaction, getFactionScores } from './gameActions.js';
 import { getActivityFeed } from './activityFeed.js';
+import { getAllAchievements } from './achievementManager.js';
+import { getAllQuests } from './questEngine.js';
+import { getPollResults, vote } from './pollManager.js';
 import { redis, createServer, context } from '@devvit/web/server';
 import { createPost } from './core/post';
 
@@ -121,6 +124,27 @@ router.get('/api/get-faction-scores', async (_req, res) => {
 router.get('/api/get-activity-feed', async (_req, res) => {
   const feed = await getActivityFeed();
   res.json(feed);
+});
+
+router.get('/api/achievements', async (_req, res) => {
+  const achievements = await getAllAchievements();
+  res.json(achievements);
+});
+
+router.get('/api/quests', async (_req, res) => {
+  const quests = await getAllQuests();
+  res.json(quests);
+});
+
+router.get('/api/polls/:pollId/results', async (req, res) => {
+  const results = await getPollResults(req.params.pollId);
+  res.json(results);
+});
+
+router.post('/api/polls/:pollId/vote', async (req, res) => {
+  const { option, playerId } = req.body;
+  await vote(req.params.pollId, option, playerId);
+  res.json({ success: true });
 });
 
 router.post('/internal/on-app-install', async (_req, res): Promise<void> => {

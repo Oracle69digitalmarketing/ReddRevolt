@@ -2,8 +2,6 @@
  * @file Manages polls.
  */
 
-import { Devvit } from '@devvit/public-api';
-
 // This is a placeholder for where we will store the polls.
 // In a real application, this would be a Kiro data store or Devvit's key-value store.
 const polls = []; // Changed from Map to array

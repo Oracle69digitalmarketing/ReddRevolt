@@ -1,31 +1,8 @@
+import { redis } from '@devvit/web/server';
+
 /**
  * @file Manages achievements and checks for completion.
  */
-
-// In a real application, you would fetch this from your Kiro data store.
-const achievements = [
-  {
-    id: "firstFactionJoin",
-    name: "First Step",
-    description: "Join a faction for the first time.",
-    trigger: "player:joinFaction",
-    reward: "100 Energy",
-  },
-  {
-    id: "firstRaid",
-    name: "First Strike",
-    description: "Successfully complete your first raid.",
-    trigger: "action:raid",
-    reward: "50 Energy",
-  },
-  {
-    id: "masterDefender",
-    name: "Master Defender",
-    description: "Successfully defend your faction 10 times.",
-    trigger: "action:defend:10", // Example: trigger with count
-    reward: "200 Energy",
-  }
-];
 
 /**
  * Gets all available achievements.
@@ -33,6 +10,14 @@ const achievements = [
  * @returns {object[]} A list of all achievements.
  */
 export async function getAllAchievements() {
+  const achievementIds = await redis.smembers('achievements');
+  const achievements = [];
+  for (const id of achievementIds) {
+    const achievementData = await redis.get(`achievement:${id}`);
+    if (achievementData) {
+      achievements.push(JSON.parse(achievementData));
+    }
+  }
   return achievements;
 }
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RankDisplay } from './components/RankDisplay';
-import { Polls } from './components/Polls';
-import { ActivityFeed } from './components/ActivityFeed';
-import { Achievements } from './components/Achievements';
-import { getAllAchievements } from '../server/achievementManager';
+import { RankDisplay } from './components/RankDisplay.jsx';
+import { Polls } from './components/Polls.jsx';
+import { ActivityFeed } from './components/ActivityFeed.jsx';
+import { Achievements } from './components/Achievements.jsx';
+import { Leaderboard } from './components/Leaderboard.jsx';
+import { Quests } from './components/Quests.jsx';
 
 const UI = () => {
   const [rank, setRank] = useState({ name: 'Recruit', iconUrl: 'https://www.redditstatic.com/gold/awards/icon/gold_64.png' });
@@ -14,17 +15,23 @@ const UI = () => {
   const [completedQuests, setCompletedQuests] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [completedAchievements, setCompletedAchievements] = useState([]);
-
   const [faction, setFaction] = useState(null);
-
   const [energy, setEnergy] = useState(100); // Initial energy
+  const [isNightMode, setIsNightMode] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
-        const allQuests = await getAllQuests();
-        setQuests(allQuests);
-        const allAchievements = await getAllAchievements();
-        setAchievements(allAchievements);
+      try {
+        const questsResponse = await fetch('/api/quests');
+        const questsData = await questsResponse.json();
+        setQuests(questsData);
+
+        const achievementsResponse = await fetch('/api/achievements');
+        const achievementsData = await achievementsResponse.json();
+        setAchievements(achievementsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
     }
     fetchData();
   }, []);
@@ -75,6 +82,7 @@ const UI = () => {
     const event = new CustomEvent('join-faction', { detail: { faction: factionName } });
     window.dispatchEvent(event);
     setFaction(factionName); // Optimistically update the UI
+    window.dispatchEvent(new CustomEvent('start-game'));
   };
 
   const handleRaid = () => {
@@ -108,13 +116,16 @@ const UI = () => {
   }
 
   return (
-    <div className={`ui-overlay ${faction ? `faction-${faction}` : ''}`}>
-        <div className="ui-header">
-            <h1>ReddRevolt</h1>
-            <p>Faction: {faction}</p>
-        </div>
-        <div className="ui-main">
-            <div className="ui-sidebar">
+    <div className={`ui-overlay ${faction ? `faction-${faction}` : ''} ${isNightMode ? 'night-mode' : ''}`}>
+        <div className="ui-sidebar">
+            <div className="ui-header">
+                <h1>ReddRevolt</h1>
+                <p>Faction: {faction}</p>
+                <button onClick={() => setIsNightMode(!isNightMode)}>
+                    {isNightMode ? 'Day Mode' : 'Night Mode'}
+                </button>
+            </div>
+            <div className="ui-main">
                 <h2>Player Stats</h2>
                 <p>Energy: {energy}</p>
                 <RankDisplay rank={rank} />
@@ -126,6 +137,8 @@ const UI = () => {
                 <hr />
                 <Leaderboard />
             </div>
+        </div>
+        <div className="game-area">
             <div className="ui-content">
                 <ActivityFeed />
                 <hr />

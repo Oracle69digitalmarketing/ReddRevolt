@@ -1,31 +1,8 @@
+import { redis } from '@devvit/web/server';
+
 /**
  * @file Manages quests and checks for completion.
  */
-
-// In a real application, you would fetch this from your Kiro data store.
-const quests = [
-  {
-    id: "firstRaid",
-    name: "First Strike",
-    description: "Successfully complete your first raid.",
-    trigger: "action:raid",
-    reward: "100 Energy",
-  },
-  {
-    id: "communityVoice",
-    name: "Community Voice",
-    description: "Vote in a poll.",
-    trigger: "poll:vote",
-    reward: "50 Energy",
-  },
-  {
-    id: "rankUp",
-    name: "Climbing the Ranks",
-    description: "Achieve the rank of Rebel.",
-    trigger: "rank:Rebel",
-    reward: "200 Energy",
-  }
-];
 
 /**
  * Gets all available quests.
@@ -33,6 +10,14 @@ const quests = [
  * @returns {object[]} A list of all quests.
  */
 export async function getAllQuests() {
+  const questIds = await redis.smembers('quests');
+  const quests = [];
+  for (const id of questIds) {
+    const questData = await redis.get(`quest:${id}`);
+    if (questData) {
+      quests.push(JSON.parse(questData));
+    }
+  }
   return quests;
 }
 

@@ -1,330 +1,229 @@
 import { Scene } from 'phaser';
 import * as Phaser from 'phaser';
-import { IncrementResponse, DecrementResponse, InitResponse } from '../../../shared/types/api';
+
+interface Player {
+  name: string;
+  faction: string | null;
+  energy: number;
+  rank: string;
+}
+
+interface Faction {
+  name: string;
+  score: number;
+}
+
+interface GameRound {
+  roundNumber: number;
+  startTime: number;
+  endTime: number;
+}
 
 export class Game extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera;
   background: Phaser.GameObjects.Image;
-  msg_text: Phaser.GameObjects.Text;
-  count: number = 0;
-  countText: Phaser.GameObjects.Text;
-  incButton: Phaser.GameObjects.Text;
-  decButton: Phaser.GameObjects.Text;
-  goButton: Phaser.GameObjects.Text;
+  player: Player;
+  factions: Faction[];
+  gameRound: GameRound;
+  joinRedButton: Phaser.GameObjects.Text;
+  joinBlueButton: Phaser.GameObjects.Text;
+  joinGreenButton: Phaser.GameObjects.Text;
+  raidButton: Phaser.GameObjects.Text;
+  defendButton: Phaser.GameObjects.Text;
+  leaderboardPanel: Phaser.GameObjects.Graphics;
+  leaderboardTitle: Phaser.GameObjects.Text;
+  leaderboardText: Phaser.GameObjects.Text[];
+  playerText: Phaser.GameObjects.Text[];
+  factionText: Phaser.GameObjects.Text[];
 
   constructor() {
     super('Game');
   }
 
   create() {
-    // Configure camera & background
     this.camera = this.cameras.main;
-    this.camera.setBackgroundColor(0x222222);
+    this.background = this.add.image(512, 384, 'background').setAlpha(1);
 
-    // Optional: semi-transparent background image if one has been loaded elsewhere
-    this.background = this.add.image(512, 384, 'background').setAlpha(0.25);
-
-    /* -------------------------------------------
-     *  UI Elements
-     * ------------------------------------------- */
-
-    // Display the current count
-    this.countText = this.add
-      .text(512, 340, `Count: ${this.count}`, {
-        fontFamily: 'Arial Black',
-        fontSize: 56,
-        color: '#ffd700',
-        stroke: '#000000',
-        strokeThickness: 10,
-      })
-      .setOrigin(0.5);
-
-    // Fetch the initial counter value from server and update UI
-    void (async () => {
-      try {
-        const response = await fetch('/api/init');
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-        const data = (await response.json()) as InitResponse;
-        this.count = data.count;
-        this.updateCountText();
-      } catch (error) {
-        console.error('Failed to fetch initial count:', error);
-      }
-    })();
-
-    // Button styling helper
-    const createButton = (y: number, label: string, color: string, onClick: () => void) => {
-      const button = this.add
-        .text(512, y, label, {
-          fontFamily: 'Arial Black',
-          fontSize: 36,
-          color: color,
-          backgroundColor: '#444444',
-          padding: {
-            x: 25,
-            y: 12,
-          } as Phaser.Types.GameObjects.Text.TextPadding,
-        })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerover', () => button.setStyle({ backgroundColor: '#555555' }))
-        .on('pointerout', () => button.setStyle({ backgroundColor: '#444444' }))
-        .on('pointerdown', onClick);
-      return button;
-    };
-
-    // Increment button
-    this.incButton = createButton(this.scale.height * 0.55, 'Increment', '#00ff00', async () => {
-      try {
-        const response = await fetch('/api/increment', { method: 'POST' });
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-        const data = (await response.json()) as IncrementResponse;
-        this.count = data.count;
-        this.updateCountText();
-      } catch (error) {
-        console.error('Failed to increment count:', error);
-      }
-    });
-
-    // Decrement button
-    this.decButton = createButton(this.scale.height * 0.65, 'Decrement', '#ff5555', async () => {
-      try {
-        const response = await fetch('/api/decrement', { method: 'POST' });
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-        const data = (await response.json()) as DecrementResponse;
-        this.count = data.count;
-        this.updateCountText();
-      } catch (error) {
-        console.error('Failed to decrement count:', error);
-      }
-    });
-
-    // Game Over button – navigates to the GameOver scene
-    this.goButton = createButton(this.scale.height * 0.75, 'Game Over', '#ffffff', () => {
-      this.scene.start('GameOver');
-    });
-
-    // Setup responsive layout
-    this.updateLayout(this.scale.width, this.scale.height);
-    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-      const { width, height } = gameSize;
-      this.updateLayout(width, height);
-    });
-
-    this.time.addEvent({
-      delay: 5000, // 5 seconds
-      callback: () => {
-        this.simulateRankChange();
-      },
-      loop: true,
-    });
-
-    this.time.addEvent({
-      delay: 10000, // 10 seconds
-      callback: () => {
-        this.simulateNewPoll();
-      },
-      loop: true,
-    });
-
-    this.time.addEvent({
-      delay: 15000, // 15 seconds
-      callback: () => {
-        this.simulateQuestCompletion();
-      },
-      loop: true,
-    });
-
-    window.addEventListener('raid-action', this.handleRaidAction.bind(this));
-
-    window.addEventListener('defend-action', this.handleDefendAction.bind(this));
-    window.addEventListener('influence-action', this.handleInfluenceAction.bind(this));
-
-    window.addEventListener('join-faction', this.handleJoinFaction.bind(this));
-
-    // No automatic navigation to GameOver – users can stay in this scene.
-  }
-
-  async handleJoinFaction(event: CustomEvent) {
-    const { faction } = event.detail;
-    
-    // In a real app, you would get the player ID from the context.
-    const playerId = 'player1';
-
-    try {
-      const response = await fetch('/api/join-faction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, faction }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      // You might want to dispatch an event here to confirm to the UI that the faction has been joined.
-
-    } catch (error) {
-      console.error('Failed to join faction:', error);
-    }
-  }
-
-  async handleDefendAction(event: CustomEvent) {
-    const { cost } = event.detail;
-    
-    // In a real app, you would get the player ID from the context.
-    const playerId = 'player1';
-
-    try {
-      const response = await fetch('/api/perform-defend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, cost }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        this.sendUIEvent('energy-changed', { energy: data.newEnergy });
-      }
-    } catch (error) {
-      console.error('Failed to perform defend:', error);
-    }
-  }
-
-  async handleInfluenceAction(event: CustomEvent) {
-    const { cost } = event.detail;
-    
-    // In a real app, you would get the player ID from the context.
-    const playerId = 'player1';
-
-    try {
-      const response = await fetch('/api/perform-influence', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, cost }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        this.sendUIEvent('energy-changed', { energy: data.newEnergy });
-      }
-    } catch (error) {
-      console.error('Failed to perform influence:', error);
-    }
-  }
-
-  async handleRaidAction(event: CustomEvent) {
-    const { cost } = event.detail;
-    
-    // In a real app, you would get the player ID from the context.
-    const playerId = 'player1';
-
-    try {
-      const response = await fetch('/api/perform-raid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, cost }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        this.sendUIEvent('energy-changed', { energy: data.newEnergy });
-      }
-    } catch (error) {
-      console.error('Failed to perform raid:', error);
-    }
-  }
-
-  simulateQuestCompletion() {
-    const quests = [
-      { id: "firstRaid", name: "First Strike", description: "Successfully complete your first raid.", reward: "100 Energy" },
-      { id: "communityVoice", name: "Community Voice", description: "Vote in a poll.", reward: "50 Energy" },
-      { id: "rankUp", name: "Climbing the Ranks", description: "Achieve the rank of Rebel.", reward: "200 Energy" },
+    this.player = { name: 'Player1', faction: null, energy: 100, rank: 'Recruit' };
+    this.factions = [
+      { name: 'Red', score: 0 },
+      { name: 'Blue', score: 0 },
+      { name: 'Green', score: 0 },
     ];
-    const completedQuest = quests[Math.floor(Math.random() * quests.length)];
-    this.sendUIEvent('quest-completed', { quest: completedQuest });
+    this.gameRound = { roundNumber: 1, startTime: Date.now(), endTime: Date.now() + 60000 };
+
+    this.add.text(100, 100, `Round: ${this.gameRound.roundNumber}`);
+
+    this.joinRedButton = this.add.text(100, 300, 'Join Red', { backgroundColor: '#ff0000', padding: { x: 10, y: 5 } })
+      .setInteractive()
+      .on('pointerdown', () => {
+        this.player.faction = 'Red';
+        this.sound.play('join_faction');
+        this.updateUI();
+      });
+
+    this.joinBlueButton = this.add.text(200, 300, 'Join Blue', { backgroundColor: '#0000ff', padding: { x: 10, y: 5 } })
+      .setInteractive()
+      .on('pointerdown', () => {
+        this.player.faction = 'Blue';
+        this.sound.play('join_faction');
+        this.updateUI();
+      });
+
+    this.joinGreenButton = this.add.text(300, 300, 'Join Green', { backgroundColor: '#00ff00', padding: { x: 10, y: 5 } })
+      .setInteractive()
+      .on('pointerdown', () => {
+        this.player.faction = 'Green';
+        this.sound.play('join_faction');
+        this.updateUI();
+      });
+
+    this.raidButton = this.add.text(100, 350, 'Raid', { backgroundColor: '#ff0000', padding: { x: 10, y: 5 } })
+      .setInteractive()
+      .on('pointerdown', () => {
+        if (this.player.faction) {
+          this.sound.play('raid');
+          const playerFaction = this.factions.find(f => f.name === this.player.faction);
+          const otherFactions = this.factions.filter(f => f.name !== this.player.faction);
+          const targetFaction = otherFactions[Math.floor(Math.random() * otherFactions.length)];
+
+          if (playerFaction) {
+            playerFaction.score += 10;
+          }
+          if (targetFaction) {
+            targetFaction.score -= 5;
+          }
+          this.createActionParticles();
+          this.shakeCamera();
+          this.showActionAnimation('Raid');
+          this.updateUI();
+        }
+      });
+
+    this.defendButton = this.add.text(200, 350, 'Defend', { backgroundColor: '#00ff00', padding: { x: 10, y: 5 } })
+      .setInteractive()
+      .on('pointerdown', () => {
+        if (this.player.faction) {
+          this.sound.play('defend');
+          const playerFaction = this.factions.find(f => f.name === this.player.faction);
+          if (playerFaction) {
+            playerFaction.score += 5;
+          }
+          this.createActionParticles();
+          this.shakeCamera();
+          this.showActionAnimation('Defend');
+          this.updateUI();
+        }
+      });
+
+    this.leaderboardPanel = this.add.graphics();
+    this.leaderboardPanel.fillStyle(0x000000, 0.8);
+    this.leaderboardPanel.fillRect(200, 100, 400, 300);
+    this.leaderboardPanel.setVisible(false);
+
+    this.leaderboardTitle = this.add.text(400, 120, 'Leaderboard', { fontSize: '24px' }).setOrigin(0.5);
+    this.leaderboardTitle.setVisible(false);
+
+    this.leaderboardText = [];
+
+    const leaderboardButton = this.add.text(500, 350, 'Leaderboard', { backgroundColor: '#888888', padding: { x: 10, y: 5 } })
+      .setInteractive()
+      .on('pointerdown', () => {
+        const isVisible = this.leaderboardPanel.visible;
+        this.leaderboardPanel.setVisible(!isVisible);
+        this.leaderboardTitle.setVisible(!isVisible);
+        this.leaderboardText.forEach(text => text.setVisible(!isVisible));
+        if (!isVisible) {
+          this.updateLeaderboard();
+        }
+      });
+
+    this.time.addEvent({
+      delay: 1000,
+      callback: this.gameLoop,
+      callbackScope: this,
+      loop: true,
+    });
+
+    this.updateUI();
   }
 
-  simulateNewPoll() {
-    const poll = {
-      id: `poll:${Date.now()}`,
-      question: 'What feature should we add next?',
-      options: ['More Quests', 'Player Avatars', 'Factions Wars'],
-      endsAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-    };
-    this.sendUIEvent('new-poll', { poll });
+  createActionParticles() {
+    this.add.particles(400, 300, 'particle', {
+      speed: 100,
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.5, end: 0 },
+      blendMode: 'ADD',
+      lifespan: 1000,
+      quantity: 10
+    });
   }
 
-  simulateRankChange() {
-    const ranks = [
-      { name: 'Recruit', iconUrl: 'https://www.redditstatic.com/gold/awards/icon/gold_64.png' },
-      { name: 'Rebel', iconUrl: 'https://i.redd.it/award_images/t5_22cerq/52z52d1sa1451_SnooClapping.png' },
-      { name: 'Warlord', iconUrl: 'https://i.redd.it/award_images/t5_22cerq/j3f0g6n339551_Wholesome.png' },
-    ];
-    const newRank = ranks[Math.floor(Math.random() * ranks.length)];
-    this.sendUIEvent('rank-changed', { rank: newRank });
+  shakeCamera() {
+    this.cameras.main.shake(100, 0.01);
   }
 
-  updateLayout(width: number, height: number) {
-    // Resize camera viewport to avoid black bars
-    this.cameras.resize(width, height);
+  showActionAnimation(action: string) {
+    const actionText = this.add.text(400, 400, `${action}!`, { fontSize: '32px', color: '#ffffff' }).setOrigin(0.5);
+    this.tweens.add({
+      targets: actionText,
+      alpha: 0,
+      duration: 1000,
+      ease: 'Power2'
+    });
+  }
 
-    // Center and scale background image to cover screen
-    if (this.background) {
-      this.background.setPosition(width / 2, height / 2);
-      if (this.background.width && this.background.height) {
-        const scale = Math.max(width / this.background.width, height / this.background.height);
-        this.background.setScale(scale);
-      }
-    }
+  updateLeaderboard() {
+    this.leaderboardText.forEach(text => text.destroy());
+    this.leaderboardText = [];
 
-    // Calculate a scale factor relative to a 1024 × 768 reference resolution.
-    // We only shrink on smaller screens – never enlarge above 1×.
-    const scaleFactor = Math.min(Math.min(width / 1024, height / 768), 1);
+    this.factions.forEach((faction, index) => {
+      const text = this.add.text(400, 180 + index * 40, `${faction.name}: ${faction.score}`, { fontSize: '20px' }).setOrigin(0.5);
+      text.setVisible(false);
+      this.leaderboardText.push(text);
+    });
+  }
 
-    if (this.countText) {
-      this.countText.setPosition(width / 2, height * 0.45);
-      this.countText.setScale(scaleFactor);
-    }
+  updateUI() {
+    if (this.factionText) this.factionText.forEach(text => text.destroy());
+    if (this.playerText) this.playerText.forEach(text => text.destroy());
 
-    if (this.incButton) {
-      this.incButton.setPosition(width / 2, height * 0.55);
-      this.incButton.setScale(scaleFactor);
-    }
+    this.factionText = [];
+    this.factionText.push(this.add.text(100, 150, `Factions:`));
+    this.factionText.push(this.add.text(100, 200, `${this.factions[0].name}: ${this.factions[0].score}`));
+    this.factionText.push(this.add.text(100, 250, `${this.factions[1].name}: ${this.factions[1].score}`));
+    this.factionText.push(this.add.text(100, 300, `${this.factions[2].name}: ${this.factions[2].score}`));
 
-    if (this.decButton) {
-      this.decButton.setPosition(width / 2, height * 0.65);
-      this.decButton.setScale(scaleFactor);
-    }
+    this.playerText = [];
+    this.playerText.push(this.add.text(400, 100, `Player: ${this.player.name}`));
+    this.playerText.push(this.add.text(400, 150, `Faction: ${this.player.faction || 'None'}`));
+    this.playerText.push(this.add.text(400, 200, `Energy: ${this.player.energy}`));
+    this.playerText.push(this.add.text(400, 250, `Rank: ${this.player.rank}`));
 
-    if (this.goButton) {
-      this.goButton.setPosition(width / 2, height * 0.75);
-      this.goButton.setScale(scaleFactor);
+    if (this.player.faction) {
+      this.joinRedButton.setVisible(false);
+      this.joinBlueButton.setVisible(false);
+      this.joinGreenButton.setVisible(false);
+      this.raidButton.setVisible(true);
+      this.defendButton.setVisible(true);
+    } else {
+      this.joinRedButton.setVisible(true);
+      this.joinBlueButton.setVisible(true);
+      this.joinGreenButton.setVisible(true);
+      this.raidButton.setVisible(false);
+      this.defendButton.setVisible(false);
     }
   }
 
-  updateCountText() {
-    this.countText.setText(`Count: ${this.count}`);
-    this.sendUIEvent('count-changed', { count: this.count });
-  }
+  gameLoop() {
+    if (Date.now() > this.gameRound.endTime) {
+      this.factions.forEach(f => f.score += Math.floor(Math.random() * 100));
 
-  sendUIEvent(eventName: string, data: any) {
-    const event = new CustomEvent(eventName, { detail: data });
-    window.dispatchEvent(event);
+      this.gameRound.roundNumber++;
+      this.gameRound.startTime = Date.now();
+      this.gameRound.endTime = Date.now() + 60000;
+
+      this.updateUI();
+    }
   }
 }

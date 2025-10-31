@@ -26,7 +26,8 @@ export class MainMenu extends Scene {
     // Re-calculate positions whenever the game canvas is resized (e.g. orientation change).
     this.scale.on('resize', () => this.refreshLayout());
 
-    this.input.once('pointerdown', () => {
+    window.addEventListener('start-game', () => {
+      this.sound.play('button_click');
       this.scene.start('Game');
     });
   }

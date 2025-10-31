@@ -1,8 +1,7 @@
-import { redis, Devvit } from '@devvit/web/server';
+import { redis } from '@devvit/web/server';
 
 import { addActivityFeedEvent } from './activityFeed.js';
 
-const a = 1;
 /**
  * Initializes the game data in the data store if it doesn't exist.
  */
@@ -104,6 +103,39 @@ export async function performDefend(playerId, cost) {
     await redis.set('factions', JSON.stringify(Array.from(factions.entries())));
 
     addActivityFeedEvent(`${player.name} has defended the ${player.faction} faction!`);
+    return { success: true, newEnergy: player.energy };
+}
+
+/**
+ * Performs an influence action for a player.
+ *
+ * @param {string} playerId The ID of the player performing the action.
+ * @param {number} cost The energy cost of the action.
+ * @returns {Promise<{success: boolean, newEnergy: number}>} The result of the action.
+ */
+export async function performInfluence(playerId, cost) {
+    const players = new Map(JSON.parse(await redis.get('players')));
+    const factions = new Map(JSON.parse(await redis.get('factions')));
+    const player = players.get(playerId);
+
+    if (!player || !player.faction || player.energy < cost) {
+        return { success: false, newEnergy: player ? player.energy : 0 };
+    }
+
+    player.energy -= cost;
+    const playerFaction = factions.get(player.faction);
+    playerFaction.score += 2; // Smaller bonus for influence
+
+    const enemyFactions = Array.from(factions.keys()).filter(f => f !== player.faction);
+    const targetFactionName = enemyFactions[Math.floor(Math.random() * enemyFactions.length)];
+    const targetFaction = factions.get(targetFactionName);
+    targetFaction.score += 1; // Small bonus to a random enemy faction
+
+
+    await redis.set('players', JSON.stringify(Array.from(players.entries())));
+    await redis.set('factions', JSON.stringify(Array.from(factions.entries())));
+
+    addActivityFeedEvent(`${player.name} has influenced the ${player.faction} and ${targetFactionName} factions!`);
     return { success: true, newEnergy: player.energy };
 }
 

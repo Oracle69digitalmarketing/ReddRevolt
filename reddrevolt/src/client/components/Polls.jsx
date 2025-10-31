@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { getPollResults, vote } from '../../server/pollManager';
 
 /**
  * A component to display and vote on polls.
@@ -15,10 +14,17 @@ export function Polls({ poll }) {
   const handleVote = async () => {
     if (selectedOption && poll) {
       // In a real app, you would get the player ID from the context.
-      const playerId = 'player1'; 
-      await vote(poll.id, selectedOption, playerId);
+      const playerId = 'player1';
+      await fetch(`/api/polls/${poll.id}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ option: selectedOption, playerId }),
+      });
       setHasVoted(true);
-      const pollResults = await getPollResults(poll.id);
+      const response = await fetch(`/api/polls/${poll.id}/results`);
+      const pollResults = await response.json();
       setResults(pollResults);
     }
   };

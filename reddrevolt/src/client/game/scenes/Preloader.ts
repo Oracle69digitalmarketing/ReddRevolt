@@ -26,7 +26,22 @@ export class Preloader extends Scene {
     //  Load the assets for the game - Replace with your own assets
     this.load.setPath('assets');
 
-    this.load.image('logo', 'logo.png');
+    this.load.image('logo', 'logo.svg');
+    this.load.audio('join_faction', 'join_faction.wav');
+    this.load.audio('raid', 'raid.wav');
+    this.load.audio('defend', 'defend.wav');
+    this.load.audio('influence', 'influence.wav');
+    this.load.audio('game_over', 'game_over.wav');
+    this.load.audio('button_click', 'button_click.wav');
+    this.createParticleTexture();
+  }
+
+  createParticleTexture() {
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0xffffff);
+    graphics.fillCircle(8, 8, 8);
+    graphics.generateTexture('particle', 16, 16);
+    graphics.destroy();
   }
 
   create() {
